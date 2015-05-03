@@ -19,6 +19,10 @@
             }
         }
 
+        /**
+         * get backing scale
+         * @returns {*}
+         */
         function backingScale() {
             if ('devicePixelRatio' in window) {
                 if (window.devicePixelRatio > 1) {
@@ -28,10 +32,22 @@
             return 1;
         }
 
+        function drawChess(ctx, chess) {
+            ctx.beginPath();
+            ctx.arc(chess.x, chess.y, chess.radius, 0, 2 * Math.PI);
+
+            ctx.fillStyle = chess.style.fill;
+            ctx.lineWidth = chess.style.lineWidth;
+            ctx.strokeStyle = chess.style.stroke;
+            ctx.fill();
+            ctx.stroke();
+        }
+
         return {
             drawLine: drawLine,
             backingScale: backingScale,
-            drawLinesFromSamplePoint: drawLinesFromSamePoint
+            drawLinesFromSamplePoint: drawLinesFromSamePoint,
+            drawChess: drawChess
         }
     });
 }());

@@ -1,154 +1,108 @@
 (function () {
     "use strict";
     define([
-        'util'
-    ], function (Util) {
+        'util',
+        'chess',
+        'model/constants',
+        'map'
+    ], function (Util, Chess, Constants, Map) {
         var App = function (canvas) {
+            this.canvas = canvas;
             this.ctx = canvas.getContext('2d');
+            this.chesses = [];
+            this.selectedChess = null;
+            this.input = {
+                click: null,
+                hover: null
+            };
         };
 
-        App.method('start', function start() {
-            this.map({
-                x: 50,
-                y: 50,
+        App.method('reset', function start() {
+            var i, chessID = 0,
+                mapPosition = {
+                    x: 50,
+                    y: 150
+                };
+            this.mapPosition = mapPosition;
+
+            this.map = new Map(this.ctx, {
+                x: mapPosition.x,
+                y: mapPosition.y,
                 block: 100
             });
+
+            for (i = 0; i < 5; i++) {
+                var chess = new Chess({
+                    x: mapPosition.x,
+                    y: mapPosition.y,
+                    block: 100
+                }, 0, i, 25, Constants.ChessType.white, ++chessID);
+                this.chesses.push(chess);
+            }
+
+            for (i = 0; i < 5; i++) {
+                var chess = new Chess({
+                    x: mapPosition.x,
+                    y: mapPosition.y,
+                    block: 100
+                }, 4, i, 25, Constants.ChessType.black, ++chessID);
+                this.chesses.push(chess);
+            }
         });
 
-
-        App.method('map', function (options) {
-            this.ctx.beginPath();
-            this.ctx.lineWidth = 1;
-            this.ctx.strokeStyle = 'red';
-            this.drawPrison({
-                x: options.x + 2 * options.block,
-                y: options.y,
-                block: options.block
-            });
-            this.ctx.stroke();
-            this.ctx.strokeStyle = '#333';
-            this.drawMap({
-                x: options.x,
-                y: options.y + options.block * 2,
-                block: options.block
-            });
-            this.ctx.stroke();
+        App.method('update', function () {
+            var chess;
+            if (this.input.click) {
+                chess = this._getChessByPosition(this.input.click);
+                if (chess) {
+                    if (this.selectedChess) {
+                        this.selectedChess.reset();
+                    }
+                    chess.select();
+                    this.selectedChess = chess;
+                }
+            }
         });
 
-        App.method('drawPrison', function (options) {
-            Util.drawLinesFromSamplePoint(this.ctx, {
-                x: options.x,
-                y: options.y
-            }, [
-                {
-                    x: options.x - options.block,
-                    y: options.y + options.block
-                },
-                {
-                    x: options.x,
-                    y: options.y + options.block * 2
-                },
-                {
-                    x: options.x + options.block,
-                    y: options.y + options.block
-                }
-            ]);
+        App.method('render', function () {
+            var i, length;
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            this.map = new Map(this.ctx, {
+                x: this.mapPosition.x,
+                y: this.mapPosition.y,
+                block: 100
+            });
 
-            Util.drawLinesFromSamplePoint(this.ctx, {
-                x: options.x,
-                y: options.y + options.block * 2
-            }, [
-                {
-                    x: options.x - options.block,
-                    y: options.y + options.block
-                },
-                {
-                    x: options.x + options.block,
-                    y: options.y + options.block
-                }
-            ]);
-
-            Util.drawLine(this.ctx, {
-                x: options.x - options.block,
-                y: options.y + options.block
-            }, {
-                x: options.x + options.block,
-                y: options.y + options.block
-            })
+            for (var i = 0, length = this.chesses.length; i < length; i++) {
+                Util.drawChess(this.ctx, this.chesses[i]);
+            }
         });
 
-        /**
-         * 绘制地图
-         * @param {Object} options 设置
-         * @param {number} options.x x 坐标
-         * @param {number} options.y y 坐标
-         */
-        App.method('drawMap', function (options) {
-            var width = options.block * 4,
-                half = options.block * 2;
-
-            this.ctx.rect(options.x, options.y, width, width);
-
-            // horizontal middle line
-            Util.drawLine(this.ctx, {
-                x: options.x,
-                y: options.y + half
-            }, {
-                x: options.x + width,
-                y: options.y + half
+        App.method('main', function () {
+            this.update();
+            this.render();
+            var self = this;
+            requestAnimationFrame(function () {
+                self.main();
             });
+        });
 
-            this.ctx.rect(options.x + options.block, options.y, half, width);
-            this.ctx.rect(options.x, options.y + options.block, width, half);
-
-            Util.drawLine(this.ctx, {
-                x: options.x,
-                y: options.y
-            }, {
-                x: options.x + width,
-                y: options.y + width
-            });
-
-            Util.drawLine(this.ctx, {
-                x: options.x,
-                y: options.y + width
-            }, {
-                x: options.x + width,
-                y: options.y
-            });
-
-
-            Util.drawLinesFromSamplePoint(this.ctx, {
-                x: options.x + half,
-                y: options.y
-            }, [
-                {
-                    x: options.x,
-                    y: options.y + half
-                },
-                {
-                    x: options.x + width,
-                    y: options.y + half
-                },
-                {
-                    x: options.x + half,
-                    y: options.y + width
+        App.method('_getChessByPosition', function (position) {
+            var i, length, chess;
+            for (i = 0, length = this.chesses.length; i < length; i++) {
+                chess = this.chesses[i];
+                if (chess.contain(position)) {
+                    return chess;
                 }
-            ]);
+            }
+        });
 
-            Util.drawLinesFromSamplePoint(this.ctx, {
-                x: options.x + half,
-                y: options.y + width
-            }, [
-                {
-                    x: options.x,
-                    y: options.y + half
-                },
-                {
-                    x: options.x + width,
-                    y: options.y + half
-                }
-            ]);
+        App.method('click', function (position) {
+            this.input.click = position;
+        });
+
+        App.method('move', function (position) {
+            this.input.hover = position;
         });
 
         return App;

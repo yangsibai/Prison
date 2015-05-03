@@ -24,6 +24,24 @@
         canvas.style.height = canvas.height / 2 + 'px';
         canvas.getContext('2d').scale(2, 2);
         var app = new App(canvas);
-        app.start();
+        app.reset();
+        requestAnimationFrame(function () {
+            app.main();
+        });
+
+        var rect = canvas.getBoundingClientRect();
+        var getPositionInCanvas = function (e) {
+            return {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+            }
+        };
+        canvas.addEventListener('click', function (e) {
+            app.click(getPositionInCanvas(e))
+        });
+
+        canvas.addEventListener('mousemove', function (e) {
+            app.move(getPositionInCanvas(e));
+        });
     });
 }());
